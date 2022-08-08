@@ -1,0 +1,1 @@
+// Burada initial statelerimizi oluşturuyoruz.
