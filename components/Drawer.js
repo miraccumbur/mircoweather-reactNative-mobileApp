@@ -18,15 +18,20 @@ import LogInPage from '../screens/LogInPage';
 import SignUpPage from '../screens/SignUpPage';
 import SettingsPage from '../screens/SettingsPage';
 import {connect} from 'react-redux';
-import {changeLoggedUserActions} from '../redux/actions/changeLoggedUserActions';
+import {changeLoggedUser} from '../redux/actions/changeLoggedUserActions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const drawer = createDrawerNavigator();
 
 const CustomDrawer = props => {
   const user = props.data.user;
-  const [loggedIn, setLoggedIn] = useState(user === '' ? false : true);
+  const [loggedIn, setLoggedIn] = useState(user ? true : false);
+  const logout = async () => {
+    await AsyncStorage.removeItem('@loggedUser');
+    props.data.changeLoggedUser(null);
+  };
   useEffect(() => {
-    setLoggedIn(user === '' ? false : true);
+    setLoggedIn(user ? true : false);
   }, [user]);
   return (
     <View style={styles.drawer}>
@@ -36,9 +41,9 @@ const CustomDrawer = props => {
             {loggedIn ? (
               <View style={styles.userArea}>
                 <Text style={styles.userNameText}>
-                  {user === '' ? 'hata' : user.name + ' ' + user.surname}
+                  {user === null ? 'hata' : user.name + ' ' + user.surname}
                 </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => logout()}>
                   <Image
                     style={styles.logoutIcon}
                     source={require('../assets/icons/log-out.png')}></Image>
@@ -61,17 +66,33 @@ const CustomDrawer = props => {
   );
 };
 
-const Drawer = ({navigation, loggedUser}) => {
-  console.log(loggedUser);
-  const [loggedIn, setLoggedIn] = useState(loggedUser === '' ? false : true);
+const Drawer = ({navigation, loggedUser, changeLoggedUser}) => {
+  // if dont use redux persist i need use thic codes.
+  // const operationNeededForChangeReducer = async () => {
+  //   if (await AsyncStorage.getItem('@loggedUser')) {
+  //     changeLoggedUser(JSON.parse(await AsyncStorage.getItem('@loggedUser')));
+  //   }
+  // };
+  // useEffect(() => {
+  //   operationNeededForChangeReducer();
+  // }, []);
+  const [loggedIn, setLoggedIn] = useState(
+    loggedUser ? (loggedUser._id ? true : false) : false,
+  );
   useEffect(() => {
-    setLoggedIn(loggedUser === '' ? false : true);
+    setLoggedIn(loggedUser ? (loggedUser._id ? true : false) : false);
   }, [loggedUser]);
 
   return (
     <drawer.Navigator
       drawerContent={props => (
-        <CustomDrawer {...props} data={{user: loggedUser}} />
+        <CustomDrawer
+          {...props}
+          data={{
+            user: loggedIn ? loggedUser : null,
+            changeLoggedUser: changeLoggedUser,
+          }}
+        />
       )}
       initialRouteName="WeatherPage"
       screenOptions={{
@@ -135,6 +156,6 @@ function mapStateToProps(state) {
   };
 }
 
-const mapDispatchToProps = {changeLoggedUserActions};
+const mapDispatchToProps = {changeLoggedUser};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Drawer);

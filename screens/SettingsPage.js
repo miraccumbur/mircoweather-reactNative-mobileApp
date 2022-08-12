@@ -13,9 +13,12 @@ import CustomInputText from '../components/CustomInputText';
 import SelectDropdown from 'react-native-select-dropdown';
 import Geolocation from '@react-native-community/geolocation';
 import {LOCATION_IQ_API_KEY} from '@env';
-import functions from '../function';
+import {mailValidate} from '../function';
+import magicString from '../magicString';
+import {connect} from 'react-redux';
+import {changeLoggedUser} from '../redux/actions/changeLoggedUserActions';
 
-const SettingsPage = () => {
+const SettingsPage = ({loggedUser}) => {
   const [type, setType] = useState('information');
   const [notificationMail, setNotificationMail] = useState('');
   const [notificationPhoneNumber, setNotificationPhoneNumber] = useState('');
@@ -50,6 +53,35 @@ const SettingsPage = () => {
       setLocation(city);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const changeInformation = async () => {
+    try {
+      if (
+        mailValidate(notificationMail) &&
+        notificationPhoneNumber.length > 11
+      ) {
+        const response = await fetch(
+          'http://localhost:3000/api/changeInformation',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              notificationMail,
+              notificationPhoneNumber,
+              notificationType,
+              user: loggedUser,
+            }),
+          },
+        );
+      } else {
+        throw magicString.WRONG_INPUT_VALUE;
+      }
+    } catch (error) {
+      alert(error);
     }
   };
   return (
@@ -127,7 +159,7 @@ const SettingsPage = () => {
               />
               <TouchableOpacity
                 style={styles.changeButton}
-                onPress={() => alert('sa')}>
+                onPress={() => changeInformation()}>
                 <Text style={styles.changeButtonText}>Change Information</Text>
               </TouchableOpacity>
             </View>
@@ -201,7 +233,15 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+function mapStateToProps(state) {
+  return {
+    loggedUser: state.changeLoggedUserReducer,
+  };
+}
+
+const mapDispatchToProps = {changeLoggedUser};
+
+export default connect(mapStateToProps, mapDispatchToProps)(SettingsPage);
 
 const styles = StyleSheet.create({
   container: {

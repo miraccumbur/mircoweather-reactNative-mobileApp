@@ -4,6 +4,7 @@ import {
   ImageBackground,
   StyleSheet,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import * as React from 'react';
 import Header from '../components/Header';

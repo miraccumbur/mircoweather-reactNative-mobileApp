@@ -19,10 +19,9 @@
 // export default counterReducer;
 
 import * as actionTypes from '../actions/actionsType';
-import initialState from './initialState';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {loggedUser} from './initialState';
 
-const changeLoggedUserReducer = (state = controlLoggedUser(), action) => {
+const changeLoggedUserReducer = (state = loggedUser, action) => {
   switch (action.type) {
     case actionTypes.CHANGE_LOGGED_USER:
       return action.payload;
@@ -32,13 +31,3 @@ const changeLoggedUserReducer = (state = controlLoggedUser(), action) => {
 };
 
 export default changeLoggedUserReducer;
-
-const controlLoggedUser = async () => {
-  const loggedUser = await AsyncStorage.getItem('@loggedUser');
-  console.log(loggedUser);
-  if (loggedUser) {
-    return loggedUser;
-  } else {
-    return '';
-  }
-};

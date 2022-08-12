@@ -17,5 +17,5 @@ import reducers from './index';
 // export default store;
 // export {persistor};
 
-const store = createStore(reducers, applyMiddleware(thunk));
-export default store;
+export const store = createStore(reducers, applyMiddleware(thunk));
+export const persistor = persistStore(store);

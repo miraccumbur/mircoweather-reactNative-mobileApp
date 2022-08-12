@@ -88,4 +88,9 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+app.post('/api/changeInformation', (req, res) => {
+  const data = req.body;
+  console.log(data);
+});
+
 app.listen(process.env.PORT);
