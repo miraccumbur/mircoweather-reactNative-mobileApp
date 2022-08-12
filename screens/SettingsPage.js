@@ -7,16 +7,18 @@ import {
   TouchableOpacity,
   TouchableHighlight,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import Header from '../components/Header';
 import CustomInputText from '../components/CustomInputText';
 import SelectDropdown from 'react-native-select-dropdown';
 import Geolocation from '@react-native-community/geolocation';
 import {LOCATION_IQ_API_KEY} from '@env';
-import {mailValidate} from '../function';
+import {mailValidate, turkishToEnglish} from '../function';
 import magicString from '../magicString';
 import {connect} from 'react-redux';
 import {changeLoggedUser} from '../redux/actions/changeLoggedUserActions';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import CustomAlert from '../components/CustomAlert';
 
 const SettingsPage = ({loggedUser}) => {
   const [type, setType] = useState('information');
@@ -29,23 +31,54 @@ const SettingsPage = ({loggedUser}) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordAgain, setNewPasswordAgain] = useState('');
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  let alertInfoNavigate =
+    route.params === undefined
+      ? null
+      : route.params.hasOwnProperty('alertInfoNavigate')
+      ? route.params.alertInfoNavigate
+      : null;
+
+  const [alertInfo, setAlertInfo] = useState(null);
+
+  useEffect(() => {
+    alertInfoNavigate !== null ? setAlertInfo(alertInfoNavigate) : null;
+    route.params === undefined
+      ? null
+      : route.params.hasOwnProperty('alertInfoNavigate')
+      ? route.params.alertInfoNavigate
+      : null;
+  }, [alertInfoNavigate, route.params]);
+
+  useEffect(() => {
+    if (alertInfo !== null) {
+      setTimeout(() => {
+        setAlertInfo(null);
+      }, 10000);
+    }
+  }, [alertInfo]);
 
   const notificationTypeSelectData = ['Mail', 'SMS', 'Mail & SMS', 'None'];
 
   const getCurrentLocation = async () => {
     try {
       setLocation('loading...');
-      await Geolocation.getCurrentPosition(info => {
-        setLatitude(info.coords.latitude);
-        setLongitude(info.coords.longitude);
+      const locData = await new Promise((resolve, reject) => {
+        Geolocation.getCurrentPosition(info => {
+          setLatitude(info.coords.latitude);
+          setLongitude(info.coords.longitude);
+          resolve({lat: info.coords.latitude, long: info.coords.longitude});
+        });
       });
       const response = await fetch(
         'https://eu1.locationiq.com/v1/reverse?key=' +
           LOCATION_IQ_API_KEY +
           '&lat=' +
-          latitude +
+          locData.lat +
           '&lon=' +
-          longitude +
+          locData.long +
           '&format=json',
       );
       const data = await response.json();
@@ -77,13 +110,129 @@ const SettingsPage = ({loggedUser}) => {
             }),
           },
         );
+
+        const data = await response.json();
+
+        if (data.code === 200) {
+          setAlertInfo({
+            alertType: 'success',
+            alertText: 'Change information operation is succesfull.',
+          });
+        } else {
+          throw data.message;
+        }
       } else {
         throw magicString.WRONG_INPUT_VALUE;
       }
     } catch (error) {
-      alert(error);
+      const alertType = 'failed';
+      let alertText = '';
+      if (error === magicString.USER_DOESNT_EXISTS) {
+        alertText = 'User doesnt exist. Please try again.';
+      } else if (error === magicString.WRONG_INPUT_VALUE) {
+        alertText = 'Your entered data is wrong. Please try again.';
+      } else {
+        alertText = 'Something is wrong. Please try again.';
+      }
+      setAlertInfo({alertType, alertText});
     }
   };
+
+  const changeLocation = async () => {
+    try {
+      if (location !== '') {
+        const city = await turkishToEnglish(location.split(',')[0]);
+        const response = await fetch(
+          'http://localhost:3000/api/changeLocation',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              city,
+              user: loggedUser,
+            }),
+          },
+        );
+
+        const data = await response.json();
+        if (data.code === 200) {
+          setAlertInfo({
+            alertType: 'success',
+            alertText: 'Change location operation is succesfull.',
+          });
+        } else {
+          throw data.message;
+        }
+      } else {
+        throw magicString.WRONG_INPUT_VALUE;
+      }
+    } catch (error) {
+      const alertType = 'failed';
+      let alertText = '';
+      if (error === magicString.USER_DOESNT_EXISTS) {
+        alertText = 'User doesnt exist. Please try again.';
+      } else if (error === magicString.WRONG_INPUT_VALUE) {
+        alertText = 'Your entered data is wrong. Please try again.';
+      } else {
+        alertText = 'Something is wrong. Please try again.';
+      }
+      setAlertInfo({alertType, alertText});
+    }
+  };
+
+  const changePassword = async () => {
+    try {
+      if (
+        currentPassword.length > 7 &&
+        newPassword.length > 7 &&
+        newPassword === newPasswordAgain
+      ) {
+        const response = await fetch(
+          'http://localhost:3000/api/changePassword',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              currentPassword,
+              newPassword,
+              newPasswordAgain,
+              user: loggedUser,
+            }),
+          },
+        );
+
+        const data = await response.json();
+        if (data.code === 200) {
+          setAlertInfo({
+            alertType: 'success',
+            alertText: 'Change password operation is succesfull.',
+          });
+        } else {
+          throw data.message;
+        }
+      } else {
+        throw magicString.WRONG_INPUT_VALUE;
+      }
+    } catch (error) {
+      const alertType = 'failed';
+      let alertText = '';
+      if (error === magicString.USER_DOESNT_EXISTS) {
+        alertText = 'User doesnt exist. Please try again.';
+      } else if (error === magicString.WRONG_INPUT_VALUE) {
+        alertText = 'Your entered data is wrong. Please try again.';
+      } else if (error === magicString.WRONG_PASSWORD) {
+        alertText = 'Your entered current password is wrong. Please try again.';
+      } else {
+        alertText = 'Something is wrong. Please try again.';
+      }
+      setAlertInfo({alertType, alertText});
+    }
+  };
+
   return (
     <ImageBackground
       source={require('../assets/background-photos/main.jpg')}
@@ -91,6 +240,7 @@ const SettingsPage = ({loggedUser}) => {
       <Header />
       <SafeAreaView style={styles.body}>
         <View style={styles.view}>
+          {alertInfo ? <CustomAlert alertInfo={alertInfo} /> : null}
           <View style={styles.buttonAreaView}>
             <TouchableOpacity
               onPress={() => {
@@ -178,7 +328,7 @@ const SettingsPage = ({loggedUser}) => {
                 editable={false}
               />
               <TouchableOpacity
-                onPress={() => alert('sa')}
+                onPress={() => changeLocation()}
                 style={styles.changeButton}>
                 <Text style={styles.changeButtonText}>
                   Change{'\n'}Location
@@ -219,7 +369,7 @@ const SettingsPage = ({loggedUser}) => {
                 </Text>
               )}
               <TouchableOpacity
-                onPress={() => alert('sa')}
+                onPress={() => changePassword()}
                 style={styles.changeButton}>
                 <Text style={styles.changeButtonText}>
                   Change{'\n'}Password

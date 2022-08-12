@@ -88,9 +88,119 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.post('/api/changeInformation', (req, res) => {
-  const data = req.body;
-  console.log(data);
+app.post('/api/changeInformation', async (req, res) => {
+  try {
+    const data = req.body;
+    const updateDataValue = {
+      emailForNotification: data.notificationMail,
+      phoneNumber: data.notificationPhoneNumber,
+      notificationType: data.notificationType,
+    };
+    const userData = await new Promise((resolve, reject) => {
+      userModel.findByIdAndUpdate(
+        data.user._id,
+        updateDataValue,
+        {upsert: false, new: true},
+        (error, data) => {
+          if (error) throw error;
+          if (data === null) throw magicString.USER_DOESNT_EXISTS;
+          resolve(data);
+        },
+      );
+    });
+
+    res.json({
+      code: 200,
+      message: 'success',
+      data: userData,
+    });
+  } catch (error) {
+    res.json({
+      code: 400,
+      message: error,
+    });
+  }
+});
+
+app.post('/api/changeLocation', async (req, res) => {
+  try {
+    const data = req.body;
+    const updateDataValue = {
+      location: data.city,
+    };
+    const userData = await new Promise((resolve, reject) => {
+      userModel.findByIdAndUpdate(
+        data.user._id,
+        updateDataValue,
+        {upsert: false, new: true},
+        (error, data) => {
+          if (error) throw error;
+          if (data === null) throw magicString.USER_DOESNT_EXISTS;
+          resolve(data);
+        },
+      );
+    });
+
+    res.json({
+      code: 200,
+      message: 'success',
+      data: userData,
+    });
+  } catch (error) {
+    res.json({
+      code: 400,
+      message: error,
+    });
+  }
+});
+
+app.post('/api/changePassword', async (req, res) => {
+  try {
+    const data = req.body;
+    const userData = await new Promise((resolve, reject) => {
+      userModel.findById(data.user._id, (error, data) => {
+        if (error) throw error;
+        resolve(data);
+      });
+    });
+    if (userData === null) throw magicString.USER_DOESNT_EXISTS;
+
+    const isPasswordMatching = await compare(
+      data.currentPassword,
+      userData.password,
+    );
+
+    const updateDataValue = {
+      password: await hash(data.newPassword),
+    };
+
+    if (isPasswordMatching) {
+      const userAfterUpdate = await new Promise((resolve, reject) => {
+        userModel.findByIdAndUpdate(
+          data.user._id,
+          updateDataValue,
+          {upsert: false, new: true},
+          (error, data) => {
+            if (error) throw error;
+            resolve(data);
+          },
+        );
+      });
+
+      res.json({
+        code: 200,
+        message: 'success',
+        data: userAfterUpdate,
+      });
+    } else {
+      throw magicString.WRONG_PASSWORD;
+    }
+  } catch (error) {
+    res.json({
+      code: 400,
+      message: error,
+    });
+  }
 });
 
 app.listen(process.env.PORT);

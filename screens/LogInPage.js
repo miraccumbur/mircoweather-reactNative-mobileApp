@@ -68,7 +68,7 @@ const LogInPage = ({loggedUser, changeLoggedUser}) => {
           navigation.navigate('Settings', {
             alertInfoNavigate: {
               alertText:
-                'Your sign up operation was succesfull. You can log in.',
+                'Your log in operation was succesfull. You can change your data.',
               alertType: 'success',
             },
           });
