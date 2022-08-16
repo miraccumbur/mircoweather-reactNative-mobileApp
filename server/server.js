@@ -2,6 +2,8 @@ const express = require('express');
 require('dotenv').config();
 const {hash, compare} = require('./hashing/hashingOperation');
 const userModel = require('./database/schemas/userSchema');
+const citiesModel = require('./database/schemas/citiesSchema');
+const weatherModel = require('./database/schemas/weatherSchema');
 const magicString = require('./magicString');
 const mongoose = require('mongoose');
 
@@ -200,6 +202,39 @@ app.post('/api/changePassword', async (req, res) => {
       code: 400,
       message: error,
     });
+  }
+});
+
+app.get('/api/getCities', async (req, res) => {
+  try {
+    const citiesData = await new Promise((resolve, reject) => {
+      citiesModel.find({}, (error, data) => {
+        if (error) throw error;
+        resolve(data);
+      });
+    });
+
+    const citiesList = [];
+    await citiesData.forEach(city => {
+      citiesList.push(city.name);
+    });
+    return res.json({code: 200, data: citiesList});
+  } catch (error) {
+    res.json({code: 400, message: error});
+  }
+});
+
+app.get('/api/getWeather/city=:city', async (req, res) => {
+  try {
+    const weatherData = await new Promise((resolve, reject) => {
+      weatherModel.findOne({name: req.params.city}, (error, data) => {
+        if (error) throw error;
+        resolve(data);
+      });
+    });
+    res.json({code: 200, data: weatherData});
+  } catch (error) {
+    res.json({code: 400, message: error});
   }
 });
 

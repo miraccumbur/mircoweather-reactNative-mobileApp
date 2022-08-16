@@ -8,6 +8,6 @@ const weatherSchema = new Schema({
   hourly: Array,
 });
 
-let weather = mongoose.model('weather', weatherSchema);
+let weatherModel = mongoose.model('weather', weatherSchema);
 
-module.exports = weather;
+module.exports = weatherModel;
