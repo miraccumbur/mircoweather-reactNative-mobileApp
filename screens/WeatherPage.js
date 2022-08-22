@@ -66,6 +66,7 @@ const WeatherPage = ({
       Tornado_Day: require('../assets/background-photos/Tornado-day.jpg'),
       Tornado_Night: require('../assets/background-photos/Tornado-night.jpg'),
     };
+
     console.log('sunrise:' + sunrise);
     console.log('sunset:' + sunset);
     if (sunrise < dt && sunset > dt) {
@@ -84,6 +85,10 @@ const WeatherPage = ({
     //   changeCurrentCityWeatherReducer.current.weather.main,
     // );
   }, [changeCurrentCityWeatherReducer]);
+
+  useEffect(() => {
+    getWeather();
+  }, []);
 
   useEffect(() => {
     const cityArray = [];
@@ -369,6 +374,7 @@ const WeatherPage = ({
       </View>
     );
   };
+  console.log(changeCurrentCityWeatherReducer);
 
   return (
     <ImageBackground
